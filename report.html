@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Report</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tracking Report</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Distance (km)</th>
+                <th>Speed (m/s)</th>
+            </tr>
+        </thead>
+        <tbody id="reportBody">
+        </tbody>
+    </table>
+    <a href="index.html">Back to Tracker</a>
+
+    <script>
+        function loadTrackingHistory() {
+            const trackingHistory = JSON.parse(localStorage.getItem('trackingHistory')) || [];
+            const reportBody = document.getElementById('reportBody');
+
+            trackingHistory.forEach((entry) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <
