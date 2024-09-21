@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walking/Running Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .info p {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+
+        #map {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .report-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .report-link a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Walking/Running Tracker</h1>
+        <p>Status: <span id="status">Not Tracking</span></p>
+        <button id="startTracking">Start Tracking</button>
+        <button id="stopTracking" disabled>Stop Tracking</button>
+        <div class="info">
+            <p>Total Distance: <span id="distance">0</span> km</p>
+            <p>Current Speed: <span id="speed">0</span> m/s</p>
+        </div>
+        <div class="report-link">
+            <a href="report.html">View Tracking Report</a>
+        </div>
+    </div>
+
+    <script>
+        let watchId;
+        let startPosition = null;
+        let totalDistance = 0;
+        let lastTime = null;
+
+        function toRadians(degree) {
+            return degree * (Math.PI / 180);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = toRadians(lat2 - lat1);
+            const dLon = toRadians(lon2 - lon1);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function updatePosition(position) {
+            const { latitude, longitude } = position.coords;
+            const currentTime = new Date().getTime();
+
+            if (!startPosition) {
+                startPosition = position.coords;
+                lastTime = currentTime;
+            } else {
+                const distance = calculateDistance(
+                    startPosition.latitude, startPosition.longitude,
+                    latitude, longitude
+                );
+                totalDistance += distance;
+
+                const timeDifference = (currentTime - lastTime) / 1000;
+                const speed = distance * 1000 / timeDifference;
+
+                startPosition = position.coords;
+                lastTime = currentTime;
+
+                document.getElementById('distance').textContent = totalDistance.toFixed(2);
+                document.getElementById('speed').textContent = speed.toFixed(2);
+            }
+
+            document.getElementById('status').textContent = `Tracking... (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        }
+
+        function startTracking() {
+            if ('geolocation' in navigator) {
+                totalDistance = 0;
+                startPosition = null;
+                lastTime = null;
+                watchId = navigator.geolocation.watchPosition(updatePosition, showError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 20000
+                });
+                document.getElementById('startTracking').disabled = true;
+                document.getElementById('stopTracking').disabled = false;
+                document.getElementById('status').textContent = 'Getting location...';
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+                document.getElementById('startTracking').disabled = false;
+                document.getElementById('stopTracking').disabled = true;
+
+                const endTime = new Date().getTime();
+                const trackingData = {
+                    distance: totalDistance.toFixed(2),
+                    date: new Date().toLocaleString(),
+                    speed: document.getElementById('speed').textContent
+                };
+
+                saveToLocalStorage(trackingData);
+
+                document.getElementById('status').textContent = 'Tracking stopped';
+                document.getElementById('distance').textContent = totalDistance.toFixed(2);
+                document.getElementById('speed').textContent = '0.00';
+            } else {
+                alert('Tracking is not active.');
+            }
+        }
+
+        function saveToLocalStorage(trackingData) {
+            let trackingHistory = JSON.parse(localStorage.getItem('trackingHistory')) || [];
+            trackingHistory.push(trackingData);
+            localStorage.setItem('trackingHistory', JSON.stringify(trackingHistory));
+        }
+
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert('User denied the request for Geolocation.');
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert('Location information is unavailable.');
+                    break;
+                case error.TIMEOUT:
+                    alert('The request to get user location timed out.');
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert('An unknown error occurred.');
+                    break;
+            }
+            document.getElementById('status').textContent = 'Error occurred';
+        }
+
+        document.getElementById('startTracking').addEventListener('click', startTracking);
+        document.getElementById('stopTracking').addEventListener('click', stopTracking);
+    </script>
+</body>
+</html>
