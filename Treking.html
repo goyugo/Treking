@@ -74,6 +74,7 @@
         let watchId;
         let startPosition = null;
         let totalDistance = 0;
+        let lastSpeed = 0; // Store the last known speed
 
         // Function to convert degrees to radians
         function toRadians(degree) {
@@ -108,8 +109,15 @@
                 startPosition = position.coords;
             }
 
+            // Update displayed values
             document.getElementById('distance').textContent = totalDistance.toFixed(2);
-            document.getElementById('speed').textContent = speed ? speed.toFixed(2) : 0;
+            document.getElementById('speed').textContent = speed ? speed.toFixed(2) : lastSpeed.toFixed(2);
+            
+            // Save the last known speed
+            if (speed) {
+                lastSpeed = speed;
+            }
+
             document.getElementById('status').textContent = `Tracking... (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
         }
 
@@ -118,6 +126,7 @@
             if ('geolocation' in navigator) {
                 totalDistance = 0; // Reset distance at the start
                 startPosition = null; // Reset starting position
+                lastSpeed = 0; // Reset last speed
                 watchId = navigator.geolocation.watchPosition(updatePosition, showError, {
                     enableHighAccuracy: true,
                     maximumAge: 0,
@@ -138,6 +147,11 @@
                 watchId = null; // Reset the watchId
                 document.getElementById('startTracking').disabled = false;
                 document.getElementById('stopTracking').disabled = true;
+
+                // Display the last distance and speed
+                document.getElementById('distance').textContent = totalDistance.toFixed(2);
+                document.getElementById('speed').textContent = lastSpeed.toFixed(2);
+
                 document.getElementById('status').textContent = 'Tracking stopped';
             } else {
                 alert('Tracking is not active.');
