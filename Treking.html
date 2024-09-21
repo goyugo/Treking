@@ -121,7 +121,7 @@
                 watchId = navigator.geolocation.watchPosition(updatePosition, showError, {
                     enableHighAccuracy: true,
                     maximumAge: 0,
-                    timeout: 5000
+                    timeout: 20000 // Extended timeout to 20 seconds
                 });
                 document.getElementById('startTracking').disabled = true;
                 document.getElementById('stopTracking').disabled = false;
@@ -160,6 +160,7 @@
                     alert('An unknown error occurred.');
                     break;
             }
+            document.getElementById('status').textContent = 'Error occurred';
         }
 
         document.getElementById('startTracking').addEventListener('click', startTracking);
