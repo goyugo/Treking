@@ -68,7 +68,6 @@
             <p>Total Distance: <span id="distance">0</span> km</p>
             <p>Current Speed: <span id="speed">0</span> m/s</p>
         </div>
-        <div id="map"></div>
     </div>
 
     <script>
@@ -76,10 +75,12 @@
         let startPosition = null;
         let totalDistance = 0;
 
+        // Function to convert degrees to radians
         function toRadians(degree) {
             return degree * (Math.PI / 180);
         }
 
+        // Function to calculate distance using Haversine formula
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; // Radius of the earth in km
             const dLat = toRadians(lat2 - lat1);
@@ -92,6 +93,7 @@
             return R * c; // Distance in km
         }
 
+        // Function to update position and calculate distance
         function updatePosition(position) {
             const { latitude, longitude, speed } = position.coords;
 
@@ -111,8 +113,11 @@
             document.getElementById('status').textContent = `Tracking... (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
         }
 
+        // Start tracking GPS location
         function startTracking() {
             if ('geolocation' in navigator) {
+                totalDistance = 0; // Reset distance at the start
+                startPosition = null; // Reset starting position
                 watchId = navigator.geolocation.watchPosition(updatePosition, showError, {
                     enableHighAccuracy: true,
                     maximumAge: 0,
@@ -126,13 +131,20 @@
             }
         }
 
+        // Stop tracking GPS location
         function stopTracking() {
-            navigator.geolocation.clearWatch(watchId);
-            document.getElementById('startTracking').disabled = false;
-            document.getElementById('stopTracking').disabled = true;
-            document.getElementById('status').textContent = 'Not Tracking';
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null; // Reset the watchId
+                document.getElementById('startTracking').disabled = false;
+                document.getElementById('stopTracking').disabled = true;
+                document.getElementById('status').textContent = 'Tracking stopped';
+            } else {
+                alert('Tracking is not active.');
+            }
         }
 
+        // Handle location errors
         function showError(error) {
             switch (error.code) {
                 case error.PERMISSION_DENIED:
